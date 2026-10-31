@@ -1,0 +1,21 @@
+{
+  "name": "spacecom-deteccao-encontros",
+  "version": "1.0.0",
+  "description": "Algoritmo de detecção e classificação de encontros físicos — Desafio Técnico Spacecom 2027",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/cli/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}
