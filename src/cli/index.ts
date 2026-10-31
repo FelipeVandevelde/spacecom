@@ -12,6 +12,8 @@ import { runStream } from '../engine/stream-runner.js';
 import {
   type DatasetValidationResult,
   type GroundTruthSummary,
+  type StructuralAuditResult,
+  auditEncounterList,
   getOfficialGroundTruth,
   summarizeGroundTruthValidations,
   validateDatasetEncounters,
@@ -36,6 +38,7 @@ export interface DatasetExecutionResult {
   readonly encounters: readonly Encounter[];
   readonly encountersCount: number;
   readonly durationMs: number;
+  readonly structuralAudit: StructuralAuditResult;
   readonly validation?: DatasetValidationResult;
 }
 
@@ -119,6 +122,8 @@ export async function processDatasetFile(
       : await runStream(inputPath, { highWaterMark });
   const durationMs = performance.now() - startTime;
 
+  const structuralAudit = auditEncounterList(encounters, outputPath);
+
   let validation: DatasetValidationResult | undefined;
   if (
     datasetId !== undefined &&
@@ -148,6 +153,7 @@ export async function processDatasetFile(
     encounters,
     encountersCount: encounters.length,
     durationMs,
+    structuralAudit,
     validation,
   };
 }

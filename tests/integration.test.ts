@@ -32,6 +32,8 @@ import {
   OFFICIAL_GROUND_TRUTH_DATASET_1,
   OFFICIAL_GROUND_TRUTH_DATASET_2,
   areEncountersEqual,
+  auditEncounterList,
+  auditOutputFile,
   summarizeGroundTruthValidations,
   validateDatasetEncounters,
 } from '../src/cli/validator.js';
@@ -601,5 +603,189 @@ describe('CLI — Validator e Orquestrador CLI com Benchmark (CAP-4, CAP-5)', ()
     } finally {
       fs.rmSync(tmpOutDir, { recursive: true, force: true });
     }
+  });
+});
+
+describe('Auditoria dos 7 Outputs Oficiais e Documentação de Defesa (CAP-5, CAP-6)', () => {
+  it('rejeita violações estruturais, temporais e matemáticas em auditEncounterList e auditOutputFile', async () => {
+    const validItem = OFFICIAL_GROUND_TRUTH_DATASET_1[0]!;
+    const secondItemSameTs: Encounter = {
+      ...OFFICIAL_GROUND_TRUTH_DATASET_1[1]!,
+      timestamp: validItem.timestamp,
+    };
+
+    const emptyAudit = auditEncounterList([]);
+    expect(emptyAudit.count).toBe(0);
+    expect(emptyAudit.minDistanceMeters).toBeNull();
+    expect(emptyAudit.maxDistanceMeters).toBeNull();
+    expect(emptyAudit.firstTimestamp).toBeNull();
+    expect(emptyAudit.lastTimestamp).toBeNull();
+
+    const multiSameTsAudit = auditEncounterList([validItem, secondItemSameTs]);
+    expect(multiSameTsAudit.count).toBe(2);
+
+    expect(() => auditEncounterList(null)).toThrow(TypeError);
+    expect(() => auditEncounterList([null])).toThrow(TypeError);
+    expect(() => auditEncounterList([{ ...validItem, extra: 1 }])).toThrow(
+      SyntaxError,
+    );
+    expect(() =>
+      auditEncounterList([{ ...validItem, tipo: 'invalido' }]),
+    ).toThrow(SyntaxError);
+    expect(() =>
+      auditEncounterList([{ ...validItem, monitoradosEncontro: [4] }]),
+    ).toThrow(SyntaxError);
+    expect(() =>
+      auditEncounterList([{ ...validItem, monitoradosEncontro: [6, 4] }]),
+    ).toThrow(RangeError);
+    expect(() =>
+      auditEncounterList([
+        { ...validItem, timestamp: '"2024-01-01 00:05:15"' },
+      ]),
+    ).toThrow(SyntaxError);
+    expect(() =>
+      auditEncounterList([
+        { ...validItem, timestamp: '2024-99-99 99:99:99' },
+      ]),
+    ).toThrow(SyntaxError);
+    expect(() =>
+      auditEncounterList([
+        { ...validItem, timestamp: '2024-02-30 12:00:00' },
+      ]),
+    ).toThrow(SyntaxError);
+    expect(() =>
+      auditEncounterList([
+        OFFICIAL_GROUND_TRUTH_DATASET_1[1]!,
+        OFFICIAL_GROUND_TRUTH_DATASET_1[0]!,
+      ]),
+    ).toThrow(RangeError);
+    expect(() => auditEncounterList([validItem, validItem])).toThrow(
+      RangeError,
+    );
+    expect(() => auditEncounterList([{ ...validItem, posicoes: null }])).toThrow(
+      TypeError,
+    );
+    expect(() =>
+      auditEncounterList([
+        {
+          ...validItem,
+          posicoes: { '4': null, '6': { lat: -31.93187, lon: -40.61435 } },
+        },
+      ]),
+    ).toThrow(TypeError);
+    expect(() =>
+      auditEncounterList([
+        {
+          ...validItem,
+          posicoes: { '4': { lat: 0, lon: 0 }, '99': { lat: 0, lon: 0 } },
+        },
+      ]),
+    ).toThrow(SyntaxError);
+    expect(() =>
+      auditEncounterList([
+        {
+          ...validItem,
+          posicoes: {
+            '4': { lat: -31.93195, lon: -40.61438, alt: 10 },
+            '6': { lat: -31.93187, lon: -40.61435 },
+          },
+        },
+      ]),
+    ).toThrow(SyntaxError);
+    expect(() =>
+      auditEncounterList([
+        {
+          ...validItem,
+          posicoes: {
+            '4': { lat: 95, lon: -40.61438 },
+            '6': { lat: -31.93187, lon: -40.61435 },
+          },
+        },
+      ]),
+    ).toThrow(RangeError);
+    expect(() =>
+      auditEncounterList([{ ...validItem, distanciaMetros: 20 }]),
+    ).toThrow(RangeError);
+    expect(() =>
+      auditEncounterList([{ ...validItem, distanciaMetros: 9.123456 }]),
+    ).toThrow(RangeError);
+
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'spacecom-audit-'));
+    try {
+      const emptyJson = path.join(tmpDir, 'empty.json');
+      fs.writeFileSync(emptyJson, '   ');
+      await expect(auditOutputFile(emptyJson)).rejects.toThrow(SyntaxError);
+
+      const brokenJson = path.join(tmpDir, 'broken.json');
+      fs.writeFileSync(brokenJson, '[{"tipo": "generico"');
+      await expect(auditOutputFile(brokenJson)).rejects.toThrow(/broken\.json/);
+
+      const mismatchJson = path.join(tmpDir, 'mismatch.json');
+      fs.writeFileSync(
+        mismatchJson,
+        JSON.stringify(OFFICIAL_GROUND_TRUTH_DATASET_2, null, 2),
+      );
+      await expect(auditOutputFile(mismatchJson, 1)).rejects.toThrow(
+        /Falha na validação de gabarito do dataset 1/,
+      );
+
+      // Reprocessa dataset3.txt e confirma igualdade exata com respostas3.json oficial
+      const outDataset3 = path.join(tmpDir, 'respostas3-recheck.json');
+      const res3 = await processDatasetFile({
+        datasetId: 3,
+        inputPath: path.resolve('docs/datasets/inputs/dataset3.txt'),
+        outputPath: outDataset3,
+      });
+      expect(res3.encountersCount).toBe(10);
+      expect(res3.structuralAudit.count).toBe(10);
+      const expected3 = JSON.parse(
+        fs.readFileSync(
+          path.resolve('docs/datasets/output/respostas3.json'),
+          'utf8',
+        ),
+      ) as Encounter[];
+      expect(res3.encounters).toEqual(expected3);
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  });
+
+  it('audita os 7 arquivos finais respostas1.json a respostas7.json comprovando integridade estrutural, Haversine < 20m e gabaritos', async () => {
+    const expectedCounts = [4, 6, 10, 15, 21, 27, 35];
+    let totalCount = 0;
+
+    for (let id = 1; id <= 7; id++) {
+      const outputPath = path.resolve(`docs/datasets/output/respostas${id}.json`);
+      expect(fs.existsSync(outputPath)).toBe(true);
+
+      const audit = await auditOutputFile(outputPath, id);
+      expect(audit.count).toBe(expectedCounts[id - 1]);
+      expect(audit.minDistanceMeters).not.toBeNull();
+      expect(audit.maxDistanceMeters).not.toBeNull();
+      expect(audit.minDistanceMeters!).toBeGreaterThanOrEqual(0);
+      expect(audit.maxDistanceMeters!).toBeLessThan(20);
+      expect(
+        audit.byType.protetiva + audit.byType.faccao + audit.byType.generico,
+      ).toBe(audit.count);
+
+      totalCount += audit.count;
+    }
+
+    expect(totalCount).toBe(118);
+  });
+
+  it('verifica que README.md existe e documenta lógica, instruções de execução e justificativa de engenharia', () => {
+    const readmePath = path.resolve('README.md');
+    expect(fs.existsSync(readmePath)).toBe(true);
+
+    const content = fs.readFileSync(readmePath, 'utf8');
+    expect(content.length).toBeGreaterThan(2000);
+    expect(content).toContain('Lógica Utilizada');
+    expect(content).toContain('Como Executar o Projeto');
+    expect(content).toContain('Melhor Abordagem');
+    expect(content).toContain('6.371.000');
+    expect(content).toContain('node dist/cli/index.js');
+    expect(content).toContain('respostas1.json');
+    expect(content).toContain('respostas7.json');
   });
 });
