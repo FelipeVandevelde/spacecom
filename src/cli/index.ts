@@ -61,8 +61,8 @@ export interface CliBenchmarkReport {
 }
 
 export const DEFAULT_DATASET_IDS: readonly number[] = [1, 2, 3, 4, 5, 6, 7];
-export const DEFAULT_INPUT_DIR = path.resolve('docs/datasets/inputs');
-export const DEFAULT_OUTPUT_DIR = path.resolve('docs/datasets/output');
+export const DEFAULT_INPUT_DIR = path.resolve('datasets/inputs');
+export const DEFAULT_OUTPUT_DIR = path.resolve('datasets/output');
 
 function validateDatasetIdsList(datasetIds: readonly number[]): void {
   if (datasetIds.length === 0) {

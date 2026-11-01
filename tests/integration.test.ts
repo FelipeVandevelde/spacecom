@@ -43,10 +43,10 @@ import {
   runCli,
 } from '../src/cli/index.js';
 
-const DATASET1_PATH = path.resolve('docs/datasets/inputs/dataset1.txt');
-const DATASET2_PATH = path.resolve('docs/datasets/inputs/dataset2.txt');
-const RESPOSTAS1_PATH = path.resolve('docs/datasets/output/respostas1.json');
-const RESPOSTAS2_PATH = path.resolve('docs/datasets/output/respostas2.json');
+const DATASET1_PATH = path.resolve('datasets/inputs/dataset1.txt');
+const DATASET2_PATH = path.resolve('datasets/inputs/dataset2.txt');
+const RESPOSTAS1_PATH = path.resolve('datasets/output/respostas1.json');
+const RESPOSTAS2_PATH = path.resolve('datasets/output/respostas2.json');
 
 describe('Engine — EntityCache e Parsing de Atributos Estáticos (CAP-1)', () => {
   it('remove aspas duplas envolventes, preserva strings sem aspas e rejeita aspas desbalanceadas', () => {
@@ -733,14 +733,14 @@ describe('Auditoria dos 7 Outputs Oficiais e Documentação de Defesa (CAP-5, CA
       const outDataset3 = path.join(tmpDir, 'respostas3-recheck.json');
       const res3 = await processDatasetFile({
         datasetId: 3,
-        inputPath: path.resolve('docs/datasets/inputs/dataset3.txt'),
+        inputPath: path.resolve('datasets/inputs/dataset3.txt'),
         outputPath: outDataset3,
       });
       expect(res3.encountersCount).toBe(10);
       expect(res3.structuralAudit.count).toBe(10);
       const expected3 = JSON.parse(
         fs.readFileSync(
-          path.resolve('docs/datasets/output/respostas3.json'),
+          path.resolve('datasets/output/respostas3.json'),
           'utf8',
         ),
       ) as Encounter[];
@@ -755,7 +755,7 @@ describe('Auditoria dos 7 Outputs Oficiais e Documentação de Defesa (CAP-5, CA
     let totalCount = 0;
 
     for (let id = 1; id <= 7; id++) {
-      const outputPath = path.resolve(`docs/datasets/output/respostas${id}.json`);
+      const outputPath = path.resolve(`datasets/output/respostas${id}.json`);
       expect(fs.existsSync(outputPath)).toBe(true);
 
       const audit = await auditOutputFile(outputPath, id);

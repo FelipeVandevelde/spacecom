@@ -88,7 +88,7 @@ A CLI inspeciona o tamanho do arquivo antes da leitura e escolhe automaticamente
 ### 2.1. Pré-requisitos
 - **Node.js** `>= 22.0.0` (validado em Node.js `v24.14.0`).
 - **npm** (incluso no Node.js).
-- Os arquivos de entrada devem estar em `docs/datasets/inputs/dataset1.txt` a `dataset7.txt`.
+- Os arquivos de entrada devem estar em `datasets/inputs/dataset1.txt` a `dataset7.txt`.
 
 ### 2.2. Instalação das Dependências de Desenvolvimento
 O projeto possui **zero dependências de produção** (`dependencies: {}`). Para instalar o compilador TypeScript e o framework de testes Vitest (`devDependencies`):
@@ -115,7 +115,7 @@ Ao executar `npm start` (ou `node dist/cli/index.js`), a aplicação:
 1. Processa sequencialmente `dataset1.txt` a `dataset7.txt`.
 2. Audita estrutural e matematicamente todos os encontros detectados.
 3. Valida automaticamente os resultados de `dataset1.txt` e `dataset2.txt` contra os gabaritos oficiais (`soma_ec = 10`, `soma_ei = 0`, `Score = 10`).
-4. Grava os 7 arquivos JSON padronizados em `docs/datasets/output/respostas1.json` a `docs/datasets/output/respostas7.json`.
+4. Grava os 7 arquivos JSON padronizados em `datasets/output/respostas1.json` a `datasets/output/respostas7.json`.
 5. Exibe no terminal a tabela consolidada de tempos individuais, soma total e tempo médio de execução.
 
 ### 2.4. Execução Seletiva de Datasets
@@ -167,7 +167,7 @@ Para arquivos grandes ($\ge 100\text{ MB}$), o gargalo passa a ser a decodifica�
 
 ## 4. Auditoria dos 7 Datasets Oficiais e Resultados
 
-Todos os 7 arquivos de saída foram gerados em `docs/datasets/output/respostas1.json` a `respostas7.json` e auditados quanto à conformidade de schema, unicidade por janela, ordenação `[menorId, maiorId]` e exatidão matemática da distância de Haversine (`< 20 m`):
+Todos os 7 arquivos de saída foram gerados em `datasets/output/respostas1.json` a `respostas7.json` e auditados quanto à conformidade de schema, unicidade por janela, ordenação `[menorId, maiorId]` e exatidão matemática da distância de Haversine (`< 20 m`):
 
 | Dataset | Tamanho | Linhas | Modo de Execução | Encontros Detectados | `protetiva` | `faccao` | `generico` | Tempo de Referência | Auditoria / Gabarito |
 | :--- | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
@@ -204,11 +204,11 @@ spacecom/
 ├── tests/
 │   ├── domain.test.ts          # Testes unitários de distância, bordas (<20m vs >=20m) e classificação
 │   └── integration.test.ts     # Testes E2E de motor, paralelismo, CLI e auditoria dos 7 outputs oficiais
+├── datasets/
+│   ├── inputs/                 # dataset1.txt a dataset7.txt
+│   └── output/                 # respostas1.json a respostas7.json gerados e auditados
 ├── docs/
-│   ├── 1_etapa_tecnica.md      # Especificação oficial do desafio Spacecom 2027
-│   └── datasets/
-│       ├── inputs/             # dataset1.txt a dataset7.txt
-│       └── output/             # respostas1.json a respostas7.json gerados e auditados
+│   └── 1_etapa_tecnica.md      # Especificação oficial do desafio Spacecom 2027
 ├── package.json
 ├── tsconfig.json
 └── README.md
